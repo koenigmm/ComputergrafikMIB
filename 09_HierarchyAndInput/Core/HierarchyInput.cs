@@ -20,6 +20,10 @@ namespace Fusee.Tutorial.Core
         private SceneRenderer _sceneRenderer;
         private float _camAngle = 0;
         private TransformComponent _baseTransform;
+        private TransformComponent _bodyTransform;
+        private TransformComponent _upperArmTransform;
+        private TransformComponent _foreArmTransform;
+        private float _camAnglerotationX;
 
         SceneContainer CreateScene()
         {
@@ -30,12 +34,31 @@ namespace Fusee.Tutorial.Core
                 Scale = new float3(1, 1, 1),
                 Translation = new float3(0, 0, 0)
             };
+            _bodyTransform = new TransformComponent
+            {
+                Rotation = new float3(0, 1.2f, 0),
+                Scale = new float3(1, 1, 1),
+                Translation = new float3(0, 6, 0)
+            };
+            _upperArmTransform = new TransformComponent
+            {
+                Rotation = new float3(0.8f, 0, 0),
+                Scale = new float3(1, 1, 1),
+                Translation = new float3(2, 4, 0)
+            };
+            _foreArmTransform = new TransformComponent
+            {
+                Rotation = new float3(0.8f, 0, 0),
+                Scale = new float3(1, 1, 1),
+                Translation = new float3(-2, 8, 0)
+            };
 
             // Setup the scene graph
             return new SceneContainer
             {
                 Children = new List<SceneNodeContainer>
                 {
+                    // GREY BASE
                     new SceneNodeContainer
                     {
                         Components = new List<SceneComponentContainer>
@@ -52,6 +75,81 @@ namespace Fusee.Tutorial.Core
 
                             // MESH COMPONENT
                             SimpleMeshes.CreateCuboid(new float3(10, 2, 10))
+                        }
+                    },
+                    // RED BODY
+                    new SceneNodeContainer
+                    {
+                        Components = new List<SceneComponentContainer>
+                        {
+                            _bodyTransform,
+                            new MaterialComponent
+                            {
+                                Diffuse = new MatChannelContainer { Color = new float3(1, 0, 0) },
+                                Specular = new SpecularChannelContainer { Color = new float3(1, 1, 1), Shininess = 5 }
+                            },
+                            SimpleMeshes.CreateCuboid(new float3(2, 10, 2))
+                        },
+                        Children = new List<SceneNodeContainer>
+                        {
+                            // GREEN UPPER ARM
+                            new SceneNodeContainer
+                            {
+                                Components = new List<SceneComponentContainer>
+                                {
+                                    _upperArmTransform,
+                                },
+                                Children = new List<SceneNodeContainer>
+                                {
+                                    new SceneNodeContainer
+                                    {
+                                        Components = new List<SceneComponentContainer>
+                                        {
+                                            new TransformComponent
+                                            {
+                                                Rotation = new float3(0, 0, 0),
+                                                Scale = new float3(1, 1, 1),
+                                                Translation = new float3(0, 4, 0)
+                                            },
+                                            new MaterialComponent
+                                            {
+                                                Diffuse = new MatChannelContainer { Color = new float3(0, 1, 0) },
+                                                Specular = new SpecularChannelContainer { Color = new float3(1, 1, 1), Shininess = 5 }
+                                            },
+                                            SimpleMeshes.CreateCuboid(new float3(2, 10, 2))
+                                        }
+                                    },
+                                    // BLUE FOREARM
+                                    new SceneNodeContainer
+                                    {
+                                        Components = new List<SceneComponentContainer>
+                                        {
+                                            _foreArmTransform,
+                                        },
+                                        Children = new List<SceneNodeContainer>
+                                        {
+                                            new SceneNodeContainer
+                                            {
+                                                Components = new List<SceneComponentContainer>
+                                                {
+                                                    new TransformComponent
+                                                    {
+                                                        Rotation = new float3(0, 0, 0),
+                                                        Scale = new float3(1, 1, 1),
+                                                        Translation = new float3(0, 4, 0)
+                                                    },
+                                                    new MaterialComponent
+                                                    {
+                                                        Diffuse = new MatChannelContainer { Color = new float3(0, 0, 1) },
+                                                        Specular = new SpecularChannelContainer { Color = new float3(1, 1, 1), Shininess = 5 }
+                                                    },
+                                                    SimpleMeshes.CreateCuboid(new float3(2, 10, 2))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
                         }
                     }
                 }
@@ -73,11 +171,33 @@ namespace Fusee.Tutorial.Core
         // RenderAFrame is called once a frame
         public override void RenderAFrame()
         {
+            float bodyRot1 = _bodyTransform.Rotation.y;
+            bodyRot1 += 3.1f * DeltaTime * Keyboard.LeftRightAxis;
+            _bodyTransform.Rotation = new float3(0, bodyRot1, 0);
+
+            float upperArmTransform = _upperArmTransform.Rotation.x;
+            upperArmTransform += 3.1f * DeltaTime* Keyboard.UpDownAxis;
+            _upperArmTransform.Rotation = new float3(upperArmTransform, 0,0);
+
+            float foreArmTransform = _foreArmTransform.Rotation.x;
+            foreArmTransform += 3.1f * DeltaTime* Keyboard.WSAxis;
+            _foreArmTransform.Rotation = new float3(foreArmTransform, 0, 0);
+           
+
+
             // Clear the backbuffer
             RC.Clear(ClearFlags.Color | ClearFlags.Depth);
 
+            // kamera maus x
+            if (Mouse.LeftButton) _camAnglerotationX = Mouse.Velocity.x / 5000;
+            _camAngle -= _camAnglerotationX;
+
+          
+
             // Setup the camera 
             RC.View = float4x4.CreateTranslation(0, -10, 50) * float4x4.CreateRotationY(_camAngle);
+
+            
 
             // Render the scene on the current render context
             _sceneRenderer.Render(RC);
