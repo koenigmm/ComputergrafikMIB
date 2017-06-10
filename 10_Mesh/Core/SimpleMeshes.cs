@@ -8,7 +8,7 @@ using Fusee.Serialization;
 
 namespace Fusee.Tutorial.Core
 {
-    public static class SimpleMeshes 
+    public static class SimpleMeshes
     {
         public static MeshComponent CreateCuboid(float3 size)
         {
@@ -150,13 +150,97 @@ namespace Fusee.Tutorial.Core
                     new float2( 1,  1),  // 22 - belongs to up
                     new float2( 0,  1),  // 23 - belongs to back                    
                 },
-                BoundingBox = new AABBf(-0.5f * size, 0.5f*size)
+                BoundingBox = new AABBf(-0.5f * size, 0.5f * size)
             };
         }
 
         public static MeshComponent CreateCylinder(float radius, float height, int segments)
         {
-            return CreateConeFrustum(radius, radius, height, segments);
+            float3[] verts = new float3[4 * segments + 2];   // four vertex per segment and two extra for the center point
+            float3[] norms = new float3[4 * segments + 2];    // one normal at each vertex
+            ushort[] tris = new ushort[4 * segments * 3];  // 4 triangles  per segment. Each triangle is made of three indices
+
+            float delta = 2 * M.Pi / segments;
+
+            verts[0] = new float3(radius, 0.5f * height, 0);
+            norms[0] = float3.UnitY;
+            verts[1] = new float3(radius, 0.5f * height, 0);
+            norms[1] = float3.UnitX;
+            verts[2] = new float3(radius, -0.5f * height, 0);
+            norms[2] = float3.UnitX;
+            verts[3] = new float3(radius, -0.5f * height, 0);
+            norms[3] = -float3.UnitY;
+
+            //oben 
+            verts[4 * segments] = new float3(radius, 0.5f * height, 0);
+            norms[4 * segments] = float3.UnitY;
+            //unten
+            verts[4 * segments + 1] = new float3(radius, -0.5f * height, 0);
+            norms[4 * segments + 1] = -float3.UnitY;
+
+
+
+            for (int i = 1; i < segments; i++)
+            {
+                // Create the current point and store it at index i
+                verts[4 * i + 0] = new float3(radius * M.Cos(i * delta), 0.5f * height, radius * M.Sin(i * delta));
+                norms[4 * i + 0] = float3.UnitY;
+                verts[4 * i + 1] = new float3(radius * M.Cos(i * delta), 0.5f * height, radius * M.Sin(i * delta));
+                norms[4 * i + 1] = new float3(M.Cos(i * delta), 0, M.Sin(i * delta));
+                verts[4 * i + 2] = new float3(radius * M.Cos(i * delta), -0.5f * height, radius * M.Sin(i * delta));
+                norms[4 * i + 2] = new float3(M.Cos(i * delta), 0, M.Sin(i * delta)); ;
+                verts[4 * i + 3] = new float3(radius * M.Cos(i * delta), -0.5f * height, radius * M.Sin(i * delta));
+                norms[4 * i + 3] = -float3.UnitY;
+
+                // Stitch the current segment 
+                // top triangle
+                tris[12 * (i - 1) + 0] = (ushort)(4 * (i - 1) + 0);
+                tris[12 * (i - 1) + 1] = (ushort)(4 * i + 0);
+                tris[12 * (i - 1) + 2] = (ushort)(4 * segments);
+
+                // side triangle 1
+                tris[12 * (i - 1) + 3] = (ushort)(4 * (i - 1) + 2);
+                tris[12 * (i - 1) + 4] = (ushort)(4 * i + 2);
+                tris[12 * (i - 1) + 5] = (ushort)(4 * i + 1);
+
+                // side triangle 2
+                tris[12 * (i - 1) + 6] = (ushort)(4 * (i - 1) + 2);
+                tris[12 * (i - 1) + 7] = (ushort)(4 * i + 1);
+                tris[12 * (i - 1) + 8] = (ushort)(4 * (i - 1) + 1);
+
+                // bottom triangle
+                tris[12 * (i - 1) + 9] = (ushort)(4 * i + 3);
+                tris[12 * (i - 1) + 10] = (ushort)(4 * (i - 1) + 3);
+                tris[12 * (i - 1) + 11] = (ushort)(4 * segments + 1);
+            }
+
+            // Stitch the last segment
+            // Last Top Triangle
+            tris[12 * segments - 1] = (ushort)(4 * segments);
+            tris[12 * segments - 2] = 0;
+            tris[12 * segments - 3] = (ushort)(4 * segments - 4);
+
+            // Last Side Triangle 1
+            tris[12 * segments - 4] = (ushort)(4 * segments - 3);
+            tris[12 * segments - 5] = 1;
+            tris[12 * segments - 6] = (ushort)(4 * segments - 2);
+
+            // Last Side Triangle 2
+            tris[12 * segments - 7] = 1;
+            tris[12 * segments - 8] = 2;
+            tris[12 * segments - 9] = (ushort)(4 * segments - 2);
+
+            // Last Bottom Triangle
+            tris[12 * segments - 10] = (ushort)(4 * segments - 1);
+            tris[12 * segments - 11] = 3;
+            tris[12 * segments - 12] = (ushort)(4 * segments + 1);
+
+            return new MeshComponent
+            {
+                Vertices = verts,
+                Normals = norms,
+                Triangles = tris,
+            };
         }
 
         public static MeshComponent CreateCone(float radius, float height, int segments)
