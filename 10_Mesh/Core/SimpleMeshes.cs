@@ -171,7 +171,7 @@ namespace Fusee.Tutorial.Core
             verts[3] = new float3(radius, -0.5f * height, 0);
             norms[3] = -float3.UnitY;
 
-            //oben 
+           //oben 
             verts[4 * segments] = new float3(radius, 0.5f * height, 0);
             norms[4 * segments] = float3.UnitY;
             //unten

@@ -63,7 +63,7 @@ namespace Fusee.Tutorial.Core
         public override void Init()
         {
             // Set the clear color for the backbuffer to white (100% intentsity in all color channels R, G, B, A).
-            RC.ClearColor = new float4(1, 0.5f, 0.3f, 1);
+            RC.ClearColor = new float4(0.8f, 0.9f, 0.7f, 1);
 
             _scene = CreateScene();
 
@@ -80,7 +80,7 @@ namespace Fusee.Tutorial.Core
             RC.Clear(ClearFlags.Color | ClearFlags.Depth);
 
             // Setup the camera 
-            RC.View = float4x4.CreateTranslation(0, 0, 40) * float4x4.CreateRotationX(-(float)Atan(15.0 / 40.0));
+            RC.View = float4x4.CreateTranslation(0, 0, 40) * float4x4.CreateRotationX(-(float) Atan(15.0 / 40.0));
 
             // Render the scene on the current render context
             _sceneRenderer.Render(RC);
