@@ -18,8 +18,13 @@ namespace Fusee.Tutorial.Core
     {
         private SceneContainer _scene;
         private SceneRenderer _sceneRenderer;
+        private ScenePicker _scenePicker;
         private float _camAngle = 0;
         private TransformComponent _baseTransform;
+        private TransformComponent _rightRearTransform;
+        private PickResult _currentPick;
+        private float3 _oldColor;
+
 
         SceneContainer CreateScene()
         {
@@ -65,22 +70,53 @@ namespace Fusee.Tutorial.Core
             // Set the clear color for the backbuffer to white (100% intentsity in all color channels R, G, B, A).
             RC.ClearColor = new float4(0.8f, 0.9f, 0.7f, 1);
 
-            _scene = CreateScene();
+            _scene = AssetStorage.Get<SceneContainer>("CubeCar.fus");
+
+            _rightRearTransform = _scene.Children.FindNodes(node => node.Name == "RightRearWheel")?.FirstOrDefault()?.GetTransform();
 
             // Create a scene renderer holding the scene above
             _sceneRenderer = new SceneRenderer(_scene);
+            _scenePicker = new ScenePicker(_scene);
         }
 
         // RenderAFrame is called once a frame
         public override void RenderAFrame()
         {
-            _baseTransform.Rotation = new float3(0, M.MinAngle(TimeSinceStart), 0);
+            _rightRearTransform.Rotation = new float3(M.MinAngle(TimeSinceStart), 0, 0);
 
             // Clear the backbuffer
             RC.Clear(ClearFlags.Color | ClearFlags.Depth);
 
             // Setup the camera 
             RC.View = float4x4.CreateTranslation(0, 0, 40) * float4x4.CreateRotationX(-(float) Atan(15.0 / 40.0));
+
+            if (Mouse.LeftButton)
+            {
+                float2 pickPosClip = Mouse.Position * new float2(2.0f / Width, -2.0f / Height) + new float2(-1, 1);
+                _scenePicker.View = RC.View;
+                _scenePicker.Projection = RC.Projection;
+                List<PickResult> pickResults = _scenePicker.Pick(pickPosClip).ToList();
+                PickResult newPick = null;
+                if (pickResults.Count > 0)
+                {
+                    pickResults.Sort((a, b) => Sign(a.ClipPos.z - b.ClipPos.z));
+                    newPick = pickResults[0];
+                }
+                if (newPick?.Node != _currentPick?.Node)
+                {
+                    if (_currentPick != null)
+                    {
+                        _currentPick.Node.GetMaterial().Diffuse.Color = _oldColor;
+                    }
+                    if (newPick != null)
+                    {
+                        var mat = newPick.Node.GetMaterial();
+                        _oldColor = mat.Diffuse.Color;
+                        mat.Diffuse.Color = new float3(1, 0.4f, 0.4f);
+                    }
+                    _currentPick = newPick;
+                }
+            }
 
             // Render the scene on the current render context
             _sceneRenderer.Render(RC);

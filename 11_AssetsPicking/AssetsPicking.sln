@@ -1,15 +1,14 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.13
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE05EC0-301F-11D3-BF4B-00C05F79EFBC}") = "AssetsPicking.Core", "Core\AssetsPicking.Core.csproj", "{4E534FDD-A963-448D-B2A6-F3E8B9F0BF69}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetsPicking.Core", "Core\AssetsPicking.Core.csproj", "{4E534FDD-A963-448D-B2A6-F3E8B9F0BF69}"
 EndProject
-Project("{FAE05EC0-301F-11D3-BF4B-00C05F79EFBC}") = "AssetsPicking.Desktop", "Desktop\AssetsPicking.Desktop.csproj", "{A8C051C0-3A74-4976-9060-70E2A865D521}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetsPicking.Desktop", "Desktop\AssetsPicking.Desktop.csproj", "{A8C051C0-3A74-4976-9060-70E2A865D521}"
 EndProject
-Project("{FAE05EC0-301F-11D3-BF4B-00C05F79EFBC}") = "AssetsPicking.Web", "Web\AssetsPicking.Web.csproj", "{DB21584F-4EA6-486A-9BDB-77D372CF1D64}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetsPicking.Web", "Web\AssetsPicking.Web.csproj", "{DB21584F-4EA6-486A-9BDB-77D372CF1D64}"
 EndProject
-Project("{FAE05EC0-301F-11D3-BF4B-00C05F79EFBC}") = "AssetsPicking.Android", "Android\AssetsPicking.Android.csproj", "{73A74ADF-6308-42A0-8BA6-2B5D53238546}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetsPicking.Android", "Android\AssetsPicking.Android.csproj", "{73A74ADF-6308-42A0-8BA6-2B5D53238546}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
