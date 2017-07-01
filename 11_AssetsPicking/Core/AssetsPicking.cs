@@ -18,12 +18,17 @@ namespace Fusee.Tutorial.Core
     {
         private SceneContainer _scene;
         private SceneRenderer _sceneRenderer;
-        private ScenePicker _scenePicker;
         private float _camAngle = 0;
         private TransformComponent _baseTransform;
         private TransformComponent _rightRearTransform;
-        private PickResult _currentPick;
-        private float3 _oldColor;
+        private TransformComponent _leftRearTransform;
+        private TransformComponent _rightFrontTransform;
+        private TransformComponent _leftFrontTransform;
+        private TransformComponent _greiferTransofrm;
+        private TransformComponent _roverTransform;
+        private float _camAngleVelocity = 0;
+        private TransformComponent _trailerTransform;
+        private float _d = 20;
 
 
         SceneContainer CreateScene()
@@ -70,53 +75,66 @@ namespace Fusee.Tutorial.Core
             // Set the clear color for the backbuffer to white (100% intentsity in all color channels R, G, B, A).
             RC.ClearColor = new float4(0.8f, 0.9f, 0.7f, 1);
 
-            _scene = AssetStorage.Get<SceneContainer>("CubeCar.fus");
+            _scene = AssetStorage.Get<SceneContainer>("rosimple.fus");
 
-            _rightRearTransform = _scene.Children.FindNodes(node => node.Name == "RightRearWheel")?.FirstOrDefault()?.GetTransform();
+            //aufgreifen der private Variablen oben 
+            _leftFrontTransform = _scene.Children.FindNodes(node => node.Name == "reifenVL")?.FirstOrDefault()?.GetTransform();
+            _rightFrontTransform = _scene.Children.FindNodes(node => node.Name == "reifenVR")?.FirstOrDefault()?.GetTransform();
+            _leftRearTransform = _scene.Children.FindNodes(node => node.Name == "ReifenHL")?.FirstOrDefault()?.GetTransform();
+            _rightRearTransform = _scene.Children.FindNodes(node => node.Name == "reifenHR")?.FirstOrDefault()?.GetTransform();
+            _greiferTransofrm = _scene.Children.FindNodes(node => node.Name == "greifer")?.FirstOrDefault()?.GetTransform();
+            _roverTransform= _scene.Children.FindNodes(node => node.Name == "auto")?.FirstOrDefault()?.GetTransform();
+            _trailerTransform = new TransformComponent { Rotation = new float3(-M.Pi / 5.7f, 0, 0), Scale = float3.One, Translation = new float3(0, 0, 10) };
+
 
             // Create a scene renderer holding the scene above
             _sceneRenderer = new SceneRenderer(_scene);
-            _scenePicker = new ScenePicker(_scene);
+            _scene.Children.Add(new SceneNodeContainer
+            {
+                Components = new List<SceneComponentContainer>
+                {
+                    _trailerTransform,
+                    new MaterialComponent { Diffuse = new MatChannelContainer { Color = new float3(0.7f, 0.7f, 0.7f) }, Specular = new SpecularChannelContainer { Color = new float3(1, 1, 1), Shininess = 5 }},
+                    SimpleMeshes.CreateCuboid(new float3(2, 2, 2))
+                }
+            });
         }
 
         // RenderAFrame is called once a frame
         public override void RenderAFrame()
         {
-            _rightRearTransform.Rotation = new float3(M.MinAngle(TimeSinceStart), 0, 0);
+            // wird nicht mehr benötigt _baseTransform.Rotation = new float3(0, M.MinAngle(TimeSinceStart), 0);
+
 
             // Clear the backbuffer
+            //kamera 
             RC.Clear(ClearFlags.Color | ClearFlags.Depth);
+            RC.View = float4x4.CreateRotationX(-M.Pi / 7.3f) * float4x4.CreateRotationY(M.Pi - _trailerTransform.Rotation.y) * float4x4.CreateTranslation(-_trailerTransform.Translation.x, -6, -_trailerTransform.Translation.z);
 
+
+
+            //Steuerung ohne Tractor Trailor Methode 
+            float posVel = Input.Keyboard.WSAxis * DeltaTime;
+            float rotVel = Input.Keyboard.ADAxis * DeltaTime;
+            float newRot = _roverTransform.Rotation.y + rotVel;
+            _roverTransform.Rotation = new float3(0, newRot, 0);
+
+       //Teilweise aus Vorlesung Räder hat leider nicht funktioniert und die Steuerung ist etwas seltsam.
+            float3 pBalt = _trailerTransform.Translation;
+
+            float3 pAneu = _roverTransform.Translation + new float3(-10 * posVel * M.Sin(newRot), 0, -10* posVel);
+            _roverTransform.Translation = pAneu;
+
+            float3 pBneu = pAneu + (float3.Normalize(pBalt - pAneu) * _d);
+            _trailerTransform.Translation = pBneu;
+
+            _trailerTransform.Rotation = new float3(0, (float)System.Math.Atan2(float3.Normalize(pBalt - pAneu).x, float3.Normalize(pBalt - pAneu).z), 0);
+
+           
             // Setup the camera 
-            RC.View = float4x4.CreateTranslation(0, 0, 40) * float4x4.CreateRotationX(-(float) Atan(15.0 / 40.0));
+            RC.View = float4x4.CreateRotationX(-M.Pi / 7.3f) * float4x4.CreateRotationY(M.Pi - _trailerTransform.Rotation.y) * float4x4.CreateTranslation(-_trailerTransform.Translation.x, -6, -_trailerTransform.Translation.z);
 
-            if (Mouse.LeftButton)
-            {
-                float2 pickPosClip = Mouse.Position * new float2(2.0f / Width, -2.0f / Height) + new float2(-1, 1);
-                _scenePicker.View = RC.View;
-                _scenePicker.Projection = RC.Projection;
-                List<PickResult> pickResults = _scenePicker.Pick(pickPosClip).ToList();
-                PickResult newPick = null;
-                if (pickResults.Count > 0)
-                {
-                    pickResults.Sort((a, b) => Sign(a.ClipPos.z - b.ClipPos.z));
-                    newPick = pickResults[0];
-                }
-                if (newPick?.Node != _currentPick?.Node)
-                {
-                    if (_currentPick != null)
-                    {
-                        _currentPick.Node.GetMaterial().Diffuse.Color = _oldColor;
-                    }
-                    if (newPick != null)
-                    {
-                        var mat = newPick.Node.GetMaterial();
-                        _oldColor = mat.Diffuse.Color;
-                        mat.Diffuse.Color = new float3(1, 0.4f, 0.4f);
-                    }
-                    _currentPick = newPick;
-                }
-            }
+
 
             // Render the scene on the current render context
             _sceneRenderer.Render(RC);
